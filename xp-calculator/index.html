@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XP Calculator · Naruto Destination Tools</title>
+  <link rel="stylesheet" href="../assets/shared.css">
+  <style>
+    .container { max-width: 720px; }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input[type="number"] {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]:focus { border-color: var(--accent); }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 0 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .total-label {
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .total-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 14px;
+    }
+
+    .detail-label { color: var(--muted); }
+    .detail-value { font-variant-numeric: tabular-nums; font-weight: 500; }
+
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .preset-btn {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .preset-btn:hover { border-color: var(--accent); }
+
+    .mode-toggle {
+      display: inline-flex;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px;
+      margin-bottom: 16px;
+    }
+
+    .mode-btn {
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      padding: 7px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      color: #111;
+      font-weight: 600;
+    }
+
+    @media (max-width: 520px) {
+      .grid { grid-template-columns: 1fr; }
+      .total-value { font-size: 28px; }
+      h1 { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav class="site-nav">
+      <a href="../">← Tools</a>
+      <span class="brand">XP Calculator</span>
+    </nav>
+
+    <header class="page-header">
+      <h1>Naruto XP Calculator</h1>
+      <p class="subtitle">Arithmetic-progression XP cost between two levels.</p>
+    </header>
+
+    <div class="card">
+      <div class="mode-toggle" role="tablist">
+        <button class="mode-btn active" data-mode="forward" type="button">XP to Target</button>
+        <button class="mode-btn" data-mode="reverse" type="button">Levels from XP</button>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label for="current">Current level</label>
+          <input type="number" id="current" value="10" min="0" step="1">
+        </div>
+        <div class="field" id="targetField">
+          <label for="target">Target level</label>
+          <input type="number" id="target" value="100" min="0" step="1">
+        </div>
+        <div class="field" id="xpBudgetField" style="display:none;">
+          <label for="xpBudget">Available XP</label>
+          <input type="number" id="xpBudget" value="0" min="0" step="1">
+        </div>
+        <div class="field">
+          <label for="nextXp">XP for next level</label>
+          <input type="number" id="nextXp" value="60" min="0" step="0.5">
+        </div>
+        <div class="field">
+          <label for="increase">XP increase per level</label>
+          <input type="number" id="increase" value="0.5" step="0.1">
+        </div>
+        <div class="field">
+          <label for="multiplier">XP multiplier <span style="opacity:0.7;">(optional)</span></label>
+          <input type="number" id="multiplier" value="1" min="0.01" step="0.1">
+        </div>
+        <div class="field">
+          <label for="tokenXp">XP per token <span style="opacity:0.7;">(base)</span></label>
+          <input type="number" id="tokenXp" value="50" min="0.01" step="1">
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="section-title" style="margin-bottom:8px;">Presets</div>
+        <div class="presets" id="presets">
+          <button class="preset-btn" data-target="1000" type="button">To 1,000</button>
+          <button class="preset-btn" data-target="1500" type="button">To 1,500</button>
+          <button class="preset-btn" data-target="2000" type="button">To 2,000</button>
+          <button class="preset-btn" data-target="3000" type="button">To 3,000</button>
+          <button class="preset-btn" data-delta="10" type="button">+10</button>
+          <button class="preset-btn" data-delta="100" type="button">+100</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Result</div>
+      <div class="total-row">
+        <span class="total-label" id="totalLabel">Total XP Needed</span>
+        <span class="total-value" id="total">0</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Levels to gain</span>
+        <span class="detail-value" id="levels">0</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">XP range (first → last)</span>
+        <span class="detail-value" id="range">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Final level XP requirement</span>
+        <span class="detail-value" id="final">0</span>
+      </div>
+      <div class="detail-row" id="reachedRow" style="display:none;">
+        <span class="detail-label">Level reached</span>
+        <span class="detail-value" id="reached">—</span>
+      </div>
+      <div class="detail-row" id="leftoverRow" style="display:none;">
+        <span class="detail-label">Leftover XP</span>
+        <span class="detail-value" id="leftover">0</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">XP Tokens</div>
+      <div class="total-row">
+        <span class="total-label">Tokens Needed</span>
+        <span class="total-value" id="tokens">0</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Effective XP per token</span>
+        <span class="detail-value" id="effXp">50</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Stacks of 64 + remainder</span>
+        <span class="detail-value" id="stacks">0</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Total XP from tokens</span>
+        <span class="detail-value" id="tokenXpTotal">0</span>
+      </div>
+    </div>
+
+    <footer class="site-footer">Formula: <code>total = n/2 × (first + last)</code></footer>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const fields = ['current','target','nextXp','increase','xpBudget','multiplier','tokenXp'];
+    const STORAGE_KEY = 'naruto-xp-calc-v1';
+
+    let mode = 'forward';
+    let lastTotalXp = 0;
+
+    const fmt = (n, decimals = 0) => {
+      if (!isFinite(n)) return '—';
+      return Number(n).toLocaleString(undefined, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    };
+
+    const fmtXp = (n) => {
+      const rounded = Math.round(n * 10) / 10;
+      const decimals = Number.isInteger(rounded) ? 0 : 1;
+      return fmt(rounded, decimals);
+    };
+
+    function calcForward() {
+      const current = parseFloat($('current').value);
+      const target = parseFloat($('target').value);
+      const nextXp = parseFloat($('nextXp').value);
+      const inc = parseFloat($('increase').value);
+
+      const levels = Math.floor(target - current);
+      if (!isFinite(levels) || levels <= 0 || !isFinite(nextXp) || !isFinite(inc)) {
+        lastTotalXp = 0;
+        $('total').textContent = '0';
+        $('levels').textContent = '0';
+        $('range').textContent = '—';
+        $('final').textContent = '0';
+        return;
+      }
+
+      const first = nextXp;
+      const last = nextXp + (levels - 1) * inc;
+      const total = levels * (first + last) / 2;
+
+      lastTotalXp = Math.ceil(total);
+      $('total').textContent = fmt(lastTotalXp);
+      $('levels').textContent = fmt(levels);
+      $('range').textContent = `${fmtXp(first)} → ${fmtXp(last)}`;
+      $('final').textContent = fmtXp(last);
+    }
+
+    function calcReverse() {
+      const current = parseFloat($('current').value);
+      const budget = parseFloat($('xpBudget').value);
+      const nextXp = parseFloat($('nextXp').value);
+      const inc = parseFloat($('increase').value);
+
+      if (!isFinite(budget) || budget < 0 || !isFinite(nextXp) || !isFinite(inc)) {
+        lastTotalXp = 0;
+        $('total').textContent = '0';
+        $('levels').textContent = '0';
+        $('range').textContent = '—';
+        $('final').textContent = '0';
+        $('reached').textContent = '—';
+        $('leftover').textContent = '0';
+        return;
+      }
+
+      let n;
+      if (inc === 0) {
+        n = nextXp > 0 ? Math.floor(budget / nextXp) : 0;
+      } else {
+        const a = inc;
+        const b = 2 * nextXp - inc;
+        const c = -2 * budget;
+        const disc = b * b - 4 * a * c;
+        n = disc < 0 ? 0 : Math.floor((-b + Math.sqrt(disc)) / (2 * a));
+      }
+      if (n < 0) n = 0;
+
+      const first = nextXp;
+      const last = n > 0 ? nextXp + (n - 1) * inc : 0;
+      const spent = n > 0 ? n * (first + last) / 2 : 0;
+      const leftover = budget - spent;
+
+      lastTotalXp = Math.floor(spent);
+      $('total').textContent = fmt(lastTotalXp);
+      $('levels').textContent = fmt(n);
+      $('range').textContent = n > 0 ? `${fmtXp(first)} → ${fmtXp(last)}` : '—';
+      $('final').textContent = n > 0 ? fmtXp(last) : '0';
+      $('reached').textContent = fmt(current + n);
+      $('leftover').textContent = fmtXp(leftover);
+    }
+
+    function calcTokens() {
+      const rawTotal = lastTotalXp;
+      const mult = parseFloat($('multiplier').value);
+      const base = parseFloat($('tokenXp').value);
+      const effective = (isFinite(mult) && isFinite(base) && mult > 0 && base > 0) ? base * mult : 0;
+
+      $('effXp').textContent = effective > 0 ? fmtXp(effective) : '—';
+
+      if (effective <= 0 || rawTotal <= 0) {
+        $('tokens').textContent = '0';
+        $('stacks').textContent = '0';
+        $('tokenXpTotal').textContent = '0';
+        return;
+      }
+
+      const tokens = Math.ceil(rawTotal / effective);
+      const stackCount = Math.floor(tokens / 64);
+      const remainder = tokens % 64;
+      const totalFromTokens = tokens * effective;
+
+      $('tokens').textContent = fmt(tokens);
+      $('stacks').textContent = stackCount > 0
+        ? `${fmt(stackCount)} × 64${remainder > 0 ? ` + ${fmt(remainder)}` : ''}`
+        : `${fmt(remainder)}`;
+      $('tokenXpTotal').textContent = fmtXp(totalFromTokens);
+    }
+
+    function recalc() {
+      if (mode === 'forward') calcForward(); else calcReverse();
+      calcTokens();
+      save();
+    }
+
+    function save() {
+      const data = {};
+      fields.forEach(f => { const el = $(f); if (el) data[f] = el.value; });
+      data.mode = mode;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        fields.forEach(f => { if (data[f] !== undefined && $(f)) $(f).value = data[f]; });
+        if (data.mode) setMode(data.mode, false);
+      } catch (e) {}
+    }
+
+    function setMode(newMode, doRecalc = true) {
+      mode = newMode;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+      if (mode === 'forward') {
+        $('targetField').style.display = '';
+        $('xpBudgetField').style.display = 'none';
+        $('totalLabel').textContent = 'Total XP Needed';
+        $('reachedRow').style.display = 'none';
+        $('leftoverRow').style.display = 'none';
+      } else {
+        $('targetField').style.display = 'none';
+        $('xpBudgetField').style.display = '';
+        $('totalLabel').textContent = 'XP Spent';
+        $('reachedRow').style.display = '';
+        $('leftoverRow').style.display = '';
+      }
+      if (doRecalc) recalc();
+    }
+
+    fields.forEach(f => {
+      const el = $(f);
+      if (el) el.addEventListener('input', recalc);
+    });
+
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+
+    document.querySelectorAll('#presets .preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.target) {
+          $('target').value = btn.dataset.target;
+          if (mode !== 'forward') setMode('forward', false);
+        } else if (btn.dataset.delta) {
+          const cur = parseFloat($('current').value) || 0;
+          $('target').value = cur + parseInt(btn.dataset.delta, 10);
+          if (mode !== 'forward') setMode('forward', false);
+        }
+        recalc();
+      });
+    });
+
+    load();
+    recalc();
+  </script>
+</body>
+</html>

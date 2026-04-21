@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enemy Drop Calculator · Naruto Destination Tools</title>
+  <link rel="stylesheet" href="../assets/shared.css">
+  <style>
+    .wrap { display: flex; flex-direction: column; gap: 12px; padding: 0; }
+
+    .card {
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      padding: 1.1rem 1.25rem;
+      margin-bottom: 0;
+    }
+
+    .sec {
+      font-size: 11px; font-weight: 500; letter-spacing: .07em;
+      text-transform: uppercase; color: var(--color-text-tertiary);
+      margin: 0 0 12px;
+    }
+
+    .fbox {
+      background: var(--color-background-tertiary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      padding: .6rem 1rem;
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--color-text-secondary); line-height: 1.9;
+      white-space: pre-wrap;
+    }
+
+    .row { display: flex; align-items: center; gap: 10px; }
+    .lbl { font-size: 13px; color: var(--color-text-secondary); min-width: 58px; }
+    .unit { font-size: 12px; color: var(--color-text-tertiary); margin-left: -6px; }
+
+    input[type=number].numinput {
+      width: 72px; font-size: 13px; font-weight: 500; text-align: right;
+      padding: 5px 8px;
+      background: var(--color-background-secondary);
+      border: 0.5px solid var(--color-border-primary);
+      border-radius: var(--border-radius-md);
+      color: var(--color-text-primary);
+      cursor: text;
+      -moz-appearance: textfield;
+      font-family: inherit;
+      transition: border-color .15s;
+    }
+    input[type=number].numinput::-webkit-outer-spin-button,
+    input[type=number].numinput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number].numinput:hover { border-color: var(--color-border-secondary); }
+    input[type=number].numinput:focus { outline: none; border-color: var(--accent); background: var(--color-background-primary); }
+
+    input[type=number].numinput.c-res { color: #D85A30; }
+    input[type=number].numinput.c-reg { color: #1D9E75; }
+
+    input[type=range] { flex: 1; accent-color: var(--accent); }
+    input[type=range].r-res { accent-color: #D85A30; }
+    input[type=range].r-reg { accent-color: #1D9E75; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 4px; }
+    .stat {
+      background: var(--color-background-secondary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      padding: 10px 8px; text-align: center;
+    }
+    .stat.highlight { border-color: var(--color-border-primary); }
+    .stat-lbl { font-size: 10px; color: var(--color-text-tertiary); display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .05em; }
+    .stat-val { font-size: 16px; font-weight: 500; color: var(--color-text-primary); }
+
+    .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .presets button { font-size: 12px; padding: 4px 12px; }
+
+    .drop-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .drop-slot { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+    .drop-slot:last-child { border-bottom: none; }
+    .drop-amt { font-size: 14px; font-weight: 500; min-width: 70px; }
+    .drop-bar-wrap { flex: 1; height: 5px; background: var(--color-border-tertiary); border-radius: 3px; overflow: hidden; }
+    .drop-bar { height: 100%; border-radius: 3px; }
+    .drop-pct { font-size: 12px; color: var(--color-text-tertiary); min-width: 30px; text-align: right; }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 999px; font-size: 10px; font-weight: 500; }
+
+    .drop-footer { display: flex; justify-content: space-between; font-size: 12px; padding-top: 8px; margin-top: 6px; border-top: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); }
+    .drop-footer span:last-child { font-weight: 500; }
+
+    .note { font-size: 11px; color: var(--color-text-tertiary); font-style: italic; margin: 6px 0 0; }
+
+    .cmp-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+    .cmp-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, .th { font-size: 11px; color: var(--color-text-tertiary); padding: 3px 8px 9px; text-align: right; font-weight: 400; white-space: nowrap; }
+    .th:first-child { text-align: left; }
+    .tier-row td { padding: 6px 8px; font-size: 12px; border-bottom: 0.5px solid var(--color-border-tertiary); text-align: right; color: var(--color-text-secondary); white-space: nowrap; }
+    .tier-row td:first-child { text-align: left; color: var(--color-text-primary); font-weight: 500; }
+    .tier-row:last-child td { border-bottom: none; }
+
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+    .refdps-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px;
+      background: var(--color-background-secondary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      margin-top: 8px;
+    }
+    .refdps-row span { font-size: 12px; color: var(--color-text-tertiary); flex: 1; }
+
+    @media (max-width: 640px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .drop-panel { grid-template-columns: 1fr; }
+      .refdps-row { flex-wrap: wrap; }
+      .refdps-row span { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav class="site-nav">
+      <a href="../">← Tools</a>
+      <span class="brand">Enemy Drop Calculator</span>
+    </nav>
+
+    <header class="page-header">
+      <h1>Enemy Drop Calculator</h1>
+      <p class="subtitle">Preview XP and Ryo drops based on enemy stats.</p>
+    </header>
+
+    <h2 class="sr-only">Enemy XP and Ryo drop calculator</h2>
+
+    <div class="wrap">
+
+      <div class="card">
+        <p class="sec">formula</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="fbox">effHP = (HP / (1 − R)) × (1 + regen / refDPS)
+S     = effHP × DMG / 250
+XP    = max(1, round(S<sup>0.75</sup> × 1.3))</div>
+          <div class="fbox">mult  = S<sup>0.75</sup> / S<sub style="font-size:10px">genin</sub><sup>0.75</sup>  <span style="color:#D85A30;font-size:11px">← drop scaling, always refDPS=25</span>
+drop<sub>amt</sub> = round(base<sub>amt</sub> × mult)</div>
+        </div>
+        <div class="refdps-row">
+          <span>Preview refDPS — affects Eff. HP display only, not the drop table</span>
+          <input type="range" id="refdps-slider" min="5" max="100" step="1" value="25" style="width:90px">
+          <input type="number" id="refdps-input" class="numinput" value="25" min="1">
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="sec">calculator</p>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <div class="row">
+            <span class="lbl">HP</span>
+            <input type="range" id="hp-slider" min="10" max="2000" step="5" value="50">
+            <input type="number" id="hp-input" class="numinput" value="50" min="1">
+          </div>
+          <div class="row">
+            <span class="lbl">DMG</span>
+            <input type="range" id="dmg-slider" min="1" max="150" step="1" value="8">
+            <input type="number" id="dmg-input" class="numinput" value="8" min="1">
+          </div>
+          <div class="row">
+            <span class="lbl">Resist.</span>
+            <input type="range" id="res-slider" min="0" max="99" step="1" value="0" class="r-res">
+            <input type="number" id="res-input" class="numinput c-res" value="0" min="0" max="99">
+            <span class="unit">%</span>
+          </div>
+          <div class="row">
+            <span class="lbl">Regen</span>
+            <input type="range" id="regen-slider" min="0" max="100" step="1" value="0" class="r-reg">
+            <input type="number" id="regen-input" class="numinput c-reg" value="0" min="0">
+            <span class="unit">HP/s</span>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat">
+              <span class="stat-lbl">Eff. HP</span>
+              <div class="stat-val" id="ehp-out">50</div>
+            </div>
+            <div class="stat">
+              <span class="stat-lbl">Regen</span>
+              <div class="stat-val" id="regen-stat" style="color:#1D9E75;font-size:14px">0 HP/s</div>
+            </div>
+            <div class="stat">
+              <span class="stat-lbl">Strength Mult</span>
+              <div class="stat-val" id="s-out">×1.60</div>
+            </div>
+            <div class="stat highlight">
+              <span class="stat-lbl">XP drop</span>
+              <div class="stat-val" id="xp-out" style="font-size:22px;color:var(--color-text-success)">2</div>
+            </div>
+          </div>
+          <p class="note">Strength Mult and XP drop are fixed at refDPS=25 and won't change with the preview slider.</p>
+
+          <div class="presets">
+            <button type="button" data-preset="50,8,0,0">Genin</button>
+            <button type="button" data-preset="250,35,30,3">Chunin</button>
+            <button type="button" data-preset="750,100,56,20">Jonin</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="drop-panel">
+        <div class="card">
+          <p class="sec">XP drops</p>
+          <div id="xp-drops"></div>
+          <div class="drop-footer"><span>Range</span><span id="xp-range">1 – 3 XP</span></div>
+          <div class="drop-footer" style="border-top:none;padding-top:2px;margin-top:0"><span>Expected</span><span id="xp-avg" style="color:var(--color-text-success)">2.0 XP</span></div>
+        </div>
+        <div class="card">
+          <p class="sec">Ryo drops</p>
+          <div id="ryo-drops"></div>
+          <div class="drop-footer"><span>Range</span><span id="ryo-range">0 – 3 Ryo</span></div>
+          <div class="drop-footer" style="border-top:none;padding-top:2px;margin-top:0"><span>Expected</span><span id="ryo-avg" style="color:#BA7517">0.55 Ryo</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cmp-header">
+          <p class="sec" style="margin:0">enemy comparison</p>
+          <span class="note" style="margin:0">locked to refDPS=25</span>
+        </div>
+        <div class="cmp-scroll">
+          <table>
+            <thead><tr>
+              <td class="th" style="text-align:left">Enemy</td>
+              <td class="th">HP</td>
+              <td class="th">Regen</td>
+              <td class="th">Str. Mult</td>
+              <td class="th">XP range</td>
+              <td class="th">XP avg</td>
+              <td class="th">Ryo range</td>
+              <td class="th">Ryo avg</td>
+            </tr></thead>
+            <tbody id="cmp-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="site-footer" style="margin-top:24px">
+      <a href="../">Back to tools</a>
+    </footer>
+  </div>
+
+  <script>
+    const CANON_REF = 25;
+    const BASE_XP  = [{amt:1, chance:1.00, label:'Guaranteed'}, {amt:2, chance:0.50, label:'Bonus'}];
+    const BASE_RYO = [{amt:1, chance:0.40, label:'Small'},      {amt:3, chance:0.05, label:'Large'}];
+    const COLORS   = {1.00:'#1D9E75', 0.50:'#378ADD', 0.40:'#BA7517', 0.05:'#D85A30'};
+    const ENEMIES  = [
+      {name:'Genin',  hp:50,  dmg:8,   res:0,  regen:0,  color:'#639922'},
+      {name:'Chunin', hp:250, dmg:35,  res:30, regen:3,  color:'#378ADD'},
+      {name:'Jonin',  hp:750, dmg:100, res:56, regen:20, color:'#D85A30'},
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    const getVal = (id) => parseFloat($(id + '-input').value) || 0;
+
+    function syncFromSlider(id) {
+      $(id + '-input').value = $(id + '-slider').value;
+      calc();
+    }
+    function syncFromInput(id) {
+      let v = parseFloat($(id + '-input').value);
+      if (isNaN(v)) return;
+      if (id === 'res') v = Math.min(99, Math.max(0, v));
+      const sl = $(id + '-slider');
+      sl.value = Math.min(parseFloat(sl.max), Math.max(parseFloat(sl.min), v));
+      calc();
+    }
+
+    function rawScore(hp, dmg, res, regen, ref) {
+      const effHP = (hp / (1 - res / 100)) * (1 + regen / ref);
+      const s = (effHP * dmg) / 250;
+      return { effHP, s, raw: Math.pow(s, 0.75) * 1.3 };
+    }
+    const G_RAW = rawScore(50, 8, 0, 0, CANON_REF).raw;
+
+    const canonMult = (hp, dmg, res, regen) => rawScore(hp, dmg, res, regen, CANON_REF).raw / G_RAW;
+    const scale = (base, mult) => base.map(d => ({ ...d, amt: Math.max(1, Math.round(d.amt * mult)) }));
+    const dRange = (drops) => ({
+      min: drops.filter(d => d.chance >= 1).reduce((a, d) => a + d.amt, 0),
+      max: drops.reduce((a, d) => a + d.amt, 0)
+    });
+    const dAvg = (drops) => drops.reduce((a, d) => a + d.amt * d.chance, 0);
+
+    function renderSlots(id, drops, unit) {
+      $(id).innerHTML = drops.map(d => {
+        const c = COLORS[d.chance] || '#888';
+        const pct = Math.round(d.chance * 100);
+        return `<div class="drop-slot">
+          <span class="drop-amt" style="color:${c}">${d.amt} ${unit}</span>
+          <div class="drop-bar-wrap"><div class="drop-bar" style="width:${pct}%;background:${c}"></div></div>
+          <span class="drop-pct">${pct}%</span>
+          <span class="badge" style="background:${c}20;color:${c}">${d.label}</span>
+        </div>`;
+      }).join('');
+    }
+
+    function calc() {
+      const hp = getVal('hp'), dmg = getVal('dmg'), res = getVal('res'), regen = getVal('regen');
+      const ref = Math.max(1, getVal('refdps'));
+      $('regen-stat').textContent = regen + ' HP/s';
+
+      const { effHP, s } = rawScore(hp, dmg, res, regen, ref);
+      const mult = canonMult(hp, dmg, res, regen);
+      const xp = Math.max(1, Math.round(rawScore(hp, dmg, res, regen, CANON_REF).raw));
+
+      $('ehp-out').textContent = Math.round(effHP);
+      $('s-out').textContent = '×' + s.toFixed(2);
+      $('xp-out').textContent = xp;
+
+      const xd = scale(BASE_XP, mult), rd = scale(BASE_RYO, mult);
+      renderSlots('xp-drops', xd, 'XP');
+      renderSlots('ryo-drops', rd, 'Ryo');
+
+      const xr = dRange(xd), rr = dRange(rd);
+      $('xp-range').textContent = xr.min + ' – ' + xr.max + ' XP';
+      $('ryo-range').textContent = rr.min + ' – ' + rr.max + ' Ryo';
+      $('xp-avg').textContent = dAvg(xd).toFixed(1) + ' XP';
+      $('ryo-avg').textContent = dAvg(rd).toFixed(2) + ' Ryo';
+
+      buildTable();
+    }
+
+    function setE(hp, dmg, res, regen) {
+      const set = (id, v) => {
+        $(id + '-input').value = v;
+        const sl = $(id + '-slider');
+        sl.value = Math.min(parseFloat(sl.max), Math.max(parseFloat(sl.min), v));
+      };
+      set('hp', hp); set('dmg', dmg); set('res', res); set('regen', regen);
+      calc();
+    }
+
+    function buildTable() {
+      $('cmp-table').innerHTML = ENEMIES.map(e => {
+        const mult = canonMult(e.hp, e.dmg, e.res, e.regen);
+        const { s } = rawScore(e.hp, e.dmg, e.res, e.regen, CANON_REF);
+        const xd = scale(BASE_XP, mult), rd = scale(BASE_RYO, mult);
+        const xr = dRange(xd), rr = dRange(rd);
+        return `<tr class="tier-row">
+          <td><span class="dot" style="background:${e.color}"></span>${e.name}</td>
+          <td>${e.hp}</td>
+          <td style="color:#1D9E75">${e.regen > 0 ? e.regen + ' HP/s' : '—'}</td>
+          <td>×${s.toFixed(2)}</td>
+          <td>${xr.min} – ${xr.max} XP</td>
+          <td style="color:var(--color-text-success)">${dAvg(xd).toFixed(1)}</td>
+          <td>${rr.min} – ${rr.max} Ryo</td>
+          <td style="color:#BA7517">${dAvg(rd).toFixed(2)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    ['hp', 'dmg', 'res', 'regen', 'refdps'].forEach(id => {
+      $(id + '-slider').addEventListener('input', () => syncFromSlider(id));
+      $(id + '-input').addEventListener('input', () => syncFromInput(id));
+    });
+
+    document.querySelectorAll('.presets button[data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const [hp, dmg, res, regen] = btn.dataset.preset.split(',').map(Number);
+        setE(hp, dmg, res, regen);
+      });
+    });
+
+    calc();
+  </script>
+</body>
+</html>
