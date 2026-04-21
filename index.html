@@ -324,6 +324,7 @@
     const STORAGE_KEY = 'naruto-xp-calc-v1';
 
     let mode = 'forward';
+    let lastTotalXp = 0;
 
     const fmt = (n, decimals = 0) => {
       if (!isFinite(n)) return '—';
@@ -347,6 +348,7 @@
 
       const levels = Math.floor(target - current);
       if (!isFinite(levels) || levels <= 0 || !isFinite(nextXp) || !isFinite(inc)) {
+        lastTotalXp = 0;
         $('total').textContent = '0';
         $('levels').textContent = '0';
         $('range').textContent = '—';
@@ -358,7 +360,8 @@
       const last = nextXp + (levels - 1) * inc;
       const total = levels * (first + last) / 2;
 
-      $('total').textContent = fmt(Math.ceil(total));
+      lastTotalXp = Math.ceil(total);
+      $('total').textContent = fmt(lastTotalXp);
       $('levels').textContent = fmt(levels);
       $('range').textContent = `${fmtXp(first)} → ${fmtXp(last)}`;
       $('final').textContent = fmtXp(last);
@@ -371,6 +374,7 @@
       const inc = parseFloat($('increase').value);
 
       if (!isFinite(budget) || budget < 0 || !isFinite(nextXp) || !isFinite(inc)) {
+        lastTotalXp = 0;
         $('total').textContent = '0';
         $('levels').textContent = '0';
         $('range').textContent = '—';
@@ -403,7 +407,8 @@
       const spent = n > 0 ? n * (first + last) / 2 : 0;
       const leftover = budget - spent;
 
-      $('total').textContent = fmt(Math.floor(spent));
+      lastTotalXp = Math.floor(spent);
+      $('total').textContent = fmt(lastTotalXp);
       $('levels').textContent = fmt(n);
       $('range').textContent = n > 0 ? `${fmtXp(first)} → ${fmtXp(last)}` : '—';
       $('final').textContent = n > 0 ? fmtXp(last) : '0';
@@ -412,7 +417,7 @@
     }
 
     function calcTokens() {
-      const rawTotal = parseFloat($('total').textContent.replace(/,/g, '')) || 0;
+      const rawTotal = lastTotalXp;
       const mult = parseFloat($('multiplier').value);
       const base = parseFloat($('tokenXp').value);
       const effective = (isFinite(mult) && isFinite(base) && mult > 0 && base > 0) ? base * mult : 0;
